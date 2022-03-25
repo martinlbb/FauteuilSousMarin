@@ -40,6 +40,11 @@ Un microcontrolleur Arduino gère le 'SpaceChair', en utilisant les entrées des
 Il contrôle ensuite 6 ESC (contrôlleur de moteur brushless (triphasé)) comme en modélisme.
 Il y a 6 moteurs, 3 par axes et 2 par sens (avant/arrière). Je l'ai conçu pour équilibrer l'effet gyroscopique (moteur sens horaire et contra sens horaire sur chaque axe) et permettre plus de finesse.
 
+## Impression 3D
+
+De nombreux éléments du fauteuil ont été désignés sous openSCAD. Boitier de commande, protection des joysticks sous l'eau, chapeau des joysticks avec la réplique des commandes NASA.
+
+
 ## Annexes
 
 ### Le fauteuil MMU
