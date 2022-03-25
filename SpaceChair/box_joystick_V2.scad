@@ -1,0 +1,249 @@
+/* [Box Options] */
+// Dimension: Box outer X-Size [mm]
+box_Size_X          = 70;
+// Dimension: Box outer Y-Size [mm]
+box_Size_Y          = 80;
+// Dimension: Box Inner height [mm]
+box_Inner_Height    = 40;
+// Box bottom/top thickness
+box_BottomTop_Thickness =  3; // [0.6:0.2:3]
+// Edge corner radius 
+box_Screw_Corner_Radius   =  8; // [2:1:10]
+// four outer screw hole diameters
+box_Screw_Diameter     =  4; // [2:0.2:4]
+// Box wall thickness
+box_Wall_Thickness     =  3; // [0.4:0.2:3.2]
+/* [Top Barrier Options] */
+// Box barrier thickness
+barrier_Thickness  =  1; // [0.4:0.2:3.2]
+// Box barrier height
+barrier_Height     =  2;   // [1.0:0.2:8]
+// Additional width on the lid to correct for badly calibrated printers
+barrier_Tolerance  =  0.8; // [0.0:0.1:1]
+/* [Mouting Screw Nose Options] */
+// Number of screw noses
+screwnose_Number        = 4; // [0:No noses, 2: one top/one bottom, 4: two top/two bottom]
+// Diameter of the noses' screw holes
+screwnose_Diameter      = 4; // [2:0.2:8]
+// Height of the noses
+screwnose_Height        = 5; // [2:0.2:10]
+// Wall thickness
+screwnose_Wall_Thickness = 2.8; // [2:0.2:5]
+//joystick screws
+joystick_Screw = 2;  //usually 2mm
+joystick_Screw_CS = 3.5; //countersink area for screw
+joystick_Screw_CS_H = 1.2; //countersitck depth
+joystick_Holes_X = 32.5; //32.5 for FTF-D300 joystick
+joystick_Holes_Y = 32.5; //32.5 for FTF-D300 joystick
+
+// **************************
+// ** Calculated globals
+// **************************
+boxHeight = box_Inner_Height+box_BottomTop_Thickness;
+
+include <threads.scad>;
+include <cyl_head_bolt.scad>;
+
+module box() {
+	barrier_Thickness = box_Wall_Thickness-barrier_Thickness;
+	difference() {
+		union() {
+			// solid round box, corners
+			translate([box_Screw_Corner_Radius, box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom left
+			translate([box_Size_X-box_Screw_Corner_Radius, box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom right
+			translate([box_Screw_Corner_Radius, box_Size_Y-box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // top left
+			translate([box_Size_X-box_Screw_Corner_Radius, box_Size_Y-box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom right
+			// solid round box, inner filling
+			translate([0, box_Screw_Corner_Radius, 0]) cube([box_Size_X, box_Size_Y-2*box_Screw_Corner_Radius, boxHeight]);
+			translate([box_Screw_Corner_Radius, 0, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius, box_Size_Y, boxHeight]);
+			// solid round box, top border
+			translate([barrier_Thickness, box_Screw_Corner_Radius+barrier_Thickness, 0]) cube([box_Size_X-2*barrier_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*barrier_Thickness, boxHeight+barrier_Height]);
+			translate([box_Screw_Corner_Radius+barrier_Thickness, barrier_Thickness, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*barrier_Thickness, box_Size_Y-2*barrier_Thickness, boxHeight+barrier_Height]);
+            
+            
+    //Small notches to rotate and lock seal ring
+    for (i = [0:45:360]){
+        for (h = [1.5:0.05:2.5]){
+            translate ([box_Size_X/2,box_Size_Y/2, 0]) rotate([0,180,(h*20)+i+22]) rotate_extrude(angle=1, $fn=50) 
+                polygon( points=[[28.5,(h+1)],[32,(h+1)],[32,5],[28.5,5]] );
+        }
+    }
+    //Secure ring for small notches
+    translate ([box_Size_X/2,box_Size_Y/2,-5]) rotate_extrude($fn=50) 
+                polygon( points=[[32,0],[35,0],[35,5],[32,5]] );
+    
+    /*
+    //Small cylinder to make it level
+    translate([12,12,-5]) cylinder(r=3, h=5, $fn=40);
+    translate([box_Size_X-10,10,-5]) cylinder(r=3, h=5, $fn=40);   
+    translate([10,box_Size_Y-10,-5]) cylinder(r=3, h=5, $fn=40);
+    translate([box_Size_X-10,box_Size_Y-10,-5]) cylinder(r=3, h=5, $fn=40);    
+    */
+
+		}
+		// inner cut-out
+		translate([box_Wall_Thickness, box_Screw_Corner_Radius+box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Wall_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, boxHeight+barrier_Height]);
+		translate([box_Screw_Corner_Radius+box_Wall_Thickness, box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, box_Size_Y-2*box_Wall_Thickness, boxHeight+barrier_Height]);
+		// Screw holes
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+        //Screws for joystick
+        translate([(box_Size_X/2)+(joystick_Holes_X/2),(box_Size_Y/2)+(joystick_Holes_Y/2),0]) cylinder(r=joystick_Screw/2, h=boxHeight, $fn=40);
+        translate([(box_Size_X/2)+(joystick_Holes_X/2),(box_Size_Y/2)-(joystick_Holes_Y/2),0]) cylinder(r=joystick_Screw/2, h=boxHeight, $fn=40);
+        translate([(box_Size_X/2)-(joystick_Holes_X/2),(box_Size_Y/2)+(joystick_Holes_Y/2),0]) cylinder(r=joystick_Screw/2, h=boxHeight, $fn=40);
+        translate([(box_Size_X/2)-(joystick_Holes_X/2),(box_Size_Y/2)-(joystick_Holes_Y/2),0]) cylinder(r=joystick_Screw/2, h=boxHeight, $fn=40);
+        
+        //Countersink for joystick screws
+        translate([(box_Size_X/2)+(joystick_Holes_X/2),(box_Size_Y/2)+(joystick_Holes_Y/2),0]) rotate_extrude($fn=40) polygon( points=[[0,0],[joystick_Screw_CS/2,0],[1,joystick_Screw_CS_H],[0,joystick_Screw_CS_H]] );
+        translate([(box_Size_X/2)+(joystick_Holes_X/2),(box_Size_Y/2)-(joystick_Holes_Y/2),0]) rotate_extrude($fn=40) polygon( points=[[0,0],[joystick_Screw_CS/2,0],[1,joystick_Screw_CS_H],[0,joystick_Screw_CS_H]] );
+        translate([(box_Size_X/2)-(joystick_Holes_X/2),(box_Size_Y/2)+(joystick_Holes_Y/2),0]) rotate_extrude($fn=40) polygon( points=[[0,0],[joystick_Screw_CS/2,0],[1,joystick_Screw_CS_H],[0,joystick_Screw_CS_H]] );
+        translate([(box_Size_X/2)-(joystick_Holes_X/2),(box_Size_Y/2)-(joystick_Holes_Y/2),0]) rotate_extrude($fn=40) polygon( points=[[0,0],[joystick_Screw_CS/2,0],[1,joystick_Screw_CS_H],[0,joystick_Screw_CS_H]] );
+        
+        
+        //Opening hole for joystick
+        //Should be 18, but imprecision make me add 0.5mm
+        translate([box_Size_X/2, box_Size_Y/2, 0]) cylinder(r=18.5, h=boxHeight, $fn=50);
+		//Adding PG-7 thread for cable gland
+        //Usual diameter is 12.5. Need to use 13.2 to allow smooth tightening
+		translate([box_Size_X/2,(box_Wall_Thickness+0.1), box_Wall_Thickness+((boxHeight-box_Wall_Thickness)/2)]) rotate([90,00,0]) difference () {metric_thread (diameter=13.2, pitch=1.27, length=4, internal=true);};
+       
+      
+}    
+
+   
+	// Lower nose(s)
+	if (screwnose_Number==2) translate([box_Size_X/2, 0.001, 0]) mirror([0,1,0]) screwNose(screwnose_Diameter, screwnose_Height);
+	if (screwnose_Number==4) {
+		translate([box_Size_X*0.25, 0.001, 0]) mirror([0,1,0]) screwNose(screwnose_Diameter, screwnose_Height);
+		translate([box_Size_X*0.75, 0.001, 0]) mirror([0,1,0]) screwNose(screwnose_Diameter, screwnose_Height);
+	}
+	// Upper nose(s)
+	if (screwnose_Number==2) translate([box_Size_X/2, box_Size_Y-0.001, 0]) screwNose(screwnose_Diameter, screwnose_Height);
+	if (screwnose_Number==4) {
+		translate([box_Size_X*0.25, box_Size_Y-0.001, 0]) screwNose(screwnose_Diameter, screwnose_Height);
+		translate([box_Size_X*0.75, box_Size_Y-0.001, 0]) screwNose(screwnose_Diameter, screwnose_Height);
+	}
+}
+
+module lid() {
+	boxHeight = box_BottomTop_Thickness+barrier_Height;
+	difference() {
+		union() {
+			// solid round box, corners
+			translate([box_Screw_Corner_Radius, box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom left
+			translate([box_Size_X-box_Screw_Corner_Radius, box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom right
+			translate([box_Screw_Corner_Radius, box_Size_Y-box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // top left
+			translate([box_Size_X-box_Screw_Corner_Radius, box_Size_Y-box_Screw_Corner_Radius, 0]) cylinder(r=box_Screw_Corner_Radius, h=boxHeight, $fn=50); // bottom right
+			// solid round box, inner filling
+			translate([0, box_Screw_Corner_Radius, 0]) cube([box_Size_X, box_Size_Y-2*box_Screw_Corner_Radius, boxHeight]);
+			translate([box_Screw_Corner_Radius, 0, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius, box_Size_Y, boxHeight]);
+			// solid round box, top border
+		}
+		// inner cut-out X direction
+		translate([
+			box_Wall_Thickness-(barrier_Thickness+barrier_Tolerance),
+			box_Screw_Corner_Radius+box_Wall_Thickness-(barrier_Thickness+barrier_Tolerance),
+			box_BottomTop_Thickness
+		]) cube([
+			box_Size_X-2*(box_Wall_Thickness)+2*(barrier_Thickness+barrier_Tolerance),
+			box_Size_Y-2*box_Screw_Corner_Radius-2*(box_Wall_Thickness)+2*(barrier_Thickness+barrier_Tolerance),
+			box_BottomTop_Thickness+barrier_Height
+		]);
+		// inner cut-out Y direction
+		translate([
+			box_Screw_Corner_Radius+box_Wall_Thickness-(barrier_Thickness+barrier_Tolerance),
+			box_Wall_Thickness-(barrier_Thickness+barrier_Tolerance),
+			box_BottomTop_Thickness
+		]) cube([
+			box_Size_X-2*box_Screw_Corner_Radius-2*(box_Wall_Thickness)+2*(barrier_Thickness+barrier_Tolerance),
+			box_Size_Y-2*(box_Wall_Thickness)+2*(barrier_Thickness+barrier_Tolerance),
+			box_BottomTop_Thickness+barrier_Height
+		]);
+		
+		// Screw holes
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+	}
+
+	// inner add X direction
+	translate([box_Wall_Thickness+barrier_Tolerance, box_Screw_Corner_Radius+box_Wall_Thickness+barrier_Tolerance, box_BottomTop_Thickness])
+		cube([box_Size_X-2*(box_Wall_Thickness+barrier_Tolerance), box_Size_Y-2*(box_Screw_Corner_Radius+box_Wall_Thickness+barrier_Tolerance), barrier_Height]);
+	// inner add Y direction
+	translate([box_Screw_Corner_Radius+box_Wall_Thickness+barrier_Tolerance, box_Wall_Thickness+barrier_Tolerance, box_BottomTop_Thickness])
+		cube([box_Size_X-2*(box_Screw_Corner_Radius+box_Wall_Thickness+barrier_Tolerance), box_Size_Y-2*(box_Wall_Thickness+barrier_Tolerance), barrier_Height]);
+}
+
+module screwNose(screwholeDiameter=4, noseHeight=5) {
+	additionalDistanceFromWall = 1;
+	translate([0,screwholeDiameter/2+screwnose_Wall_Thickness+additionalDistanceFromWall, 0]) difference() {
+		union() {
+			translate([-(screwholeDiameter/2+screwnose_Wall_Thickness), -(screwholeDiameter/2+screwnose_Wall_Thickness+additionalDistanceFromWall),0]) cube([(screwholeDiameter/2+screwnose_Wall_Thickness)*2, screwholeDiameter/2+screwnose_Wall_Thickness+additionalDistanceFromWall, noseHeight]);
+			cylinder(r=(screwholeDiameter/2)+screwnose_Wall_Thickness, h=noseHeight, $fn=60);
+		}
+		cylinder(r=screwholeDiameter/2, h=noseHeight, $fn=60);
+	}
+}
+
+module inner_ring(){
+    //Use 0,88mm as glove thickness. Could be a bit smaller.
+    translate([-85,30,0])
+    rotate_extrude($fn=50) 
+        polygon( points=[[17.26,0],[18.26,0],[17.12,5],[16.12,5],] );
+}
+
+module middle_ring(){
+    translate([-125,30,0])
+    rotate_extrude($fn=50) 
+        polygon( points=[[19.14,0],[21.14,0],[20,5],[18,5],] );
+}
+
+/*
+module outer_ring(){
+     //Use 0,85mm as glove thickness. To make it squiz more
+    rotate_extrude($fn=50) 
+        polygon( points=[[21.99,0],[23,0],[23,5],[21.35,5],] );
+}**/
+module outer_ring(){
+    translate([-35,30,0])
+ union(){
+    difference(){
+     //Use 0,90mm as glove thickness. To make it squiz less
+    rotate_extrude($fn=50) 
+        polygon( points=[[22.04,0],[28,0],[28,5],[21.40,5]] );
+    //Hole for tightening
+    i=0;
+    for (i = [0:60:300]){
+        rotate([0,0,i]) translate([0,25,3])    
+        cylinder(r=1, h=2, $fn=20);   
+    }
+    }
+
+
+    //Small notch to rotate and lock seal ring
+    for (i = [0:45:360]){
+        h=0;
+        for (h = [1.5:0.05:2.5]){
+            rotate([0,0,-(h*20)+i]) rotate_extrude(angle=1, $fn=50) 
+                polygon( points=[[28,0],[31,0],[31,(h+0.5)],[28,(h+0.5)]] );
+        }
+    }
+    
+ }
+
+}
+
+box();
+inner_ring();
+
+middle_ring();
+outer_ring();
+
+if (box_Size_X>box_Size_Y) {
+	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
+} else {
+	translate([box_Size_X+5, 0, 0]) lid();	
+}
